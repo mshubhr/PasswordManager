@@ -1,6 +1,5 @@
 package com.example.passwordmanager.auth
 
-import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.PromptInfo

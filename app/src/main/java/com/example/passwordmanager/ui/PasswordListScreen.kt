@@ -1,5 +1,15 @@
 package com.example.passwordmanager.ui
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -40,18 +50,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.passwordmanager.R
 import com.example.passwordmanager.data.Password
 import com.example.passwordmanager.data.PasswordSaver
 import com.example.passwordmanager.data.PasswordViewModel
+import com.example.passwordmanager.notifications.NotificationReceiver
 import com.example.passwordmanager.ui.appComponents.PasswordFieldComponent
 import com.example.passwordmanager.ui.appComponents.TextComponent
 import com.example.passwordmanager.ui.appComponents.TextFieldComponent
@@ -61,6 +75,9 @@ import com.example.passwordmanager.util.PasswordStrength
 import com.example.passwordmanager.util.Utils
 import kotlinx.coroutines.launch
 
+private const val CHANNEL_ID = "password_manager_channel"
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun PasswordListScreen(vm: PasswordViewModel = hiltViewModel()) {
     var openBottomSheet by rememberSaveable { mutableStateOf(false) }
@@ -373,6 +390,7 @@ fun PasswordListScreen(vm: PasswordViewModel = hiltViewModel()) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun PasswordBottomSheet(
     isEditMode: Boolean = false,
@@ -386,6 +404,19 @@ fun PasswordBottomSheet(
     val passwordStrengthState = remember { mutableStateOf(Utils.getPasswordStrength(passwordState.value.encryptedPassword)) }
 
     var openBottomSheet by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                createNotificationChannel(context)
+                notification(context)
+            } else {
+                // Handle permission denied case
+            }
+        }
+    )
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -525,6 +556,14 @@ fun PasswordBottomSheet(
                             emailState.value,
                             passwordState.value.encryptedPassword
                         )
+                        if (ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.POST_NOTIFICATIONS
+                            ) == PackageManager.PERMISSION_GRANTED) {
+                            createNotificationChannel(context)
+                            notification(context)
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
@@ -542,6 +581,33 @@ fun PasswordBottomSheet(
             Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.captionBar))
         }
     }
+}
+
+fun createNotificationChannel(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val name = "Password Manager Channel"
+        val descriptionText = "Channel for password manager notifications"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(NotificationReceiver.CHANNEL_ID, name, importance).apply {
+            description = descriptionText
+        }
+        val notificationManager: NotificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+}
+
+@SuppressLint("MissingPermission")
+private fun notification(context: Context) {
+    val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_noti)
+        .setContentTitle("Password Manager")
+        .setContentText("Password added successfully")
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setAutoCancel(true)
+
+    val notificationManagerCompat = NotificationManagerCompat.from(context)
+     notificationManagerCompat.notify(1, builder.build())
 }
 
 @Composable
@@ -580,10 +646,4 @@ fun CardItem(authData: Password, onclick: (Password) -> Unit) {
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPasswordListScreen() {
-    PasswordListScreen()
 }

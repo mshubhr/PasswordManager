@@ -36,7 +36,6 @@ fun FingerPrintAuth(nav: NavHostController) {
     val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
 
     if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
-        // Handle cases where biometric authentication is not available
         Column(
             Modifier
                 .fillMaxSize()

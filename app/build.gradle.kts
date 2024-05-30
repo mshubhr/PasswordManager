@@ -54,6 +54,8 @@ android {
 dependencies {
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -92,7 +94,6 @@ dependencies {
     implementation(libs.roomKtx)
     ksp(libs.roomCompiler)
 
-
     //encryption
-    implementation ("commons-codec:commons-codec:1.15")
+    implementation (libs.commons.codec)
 }
