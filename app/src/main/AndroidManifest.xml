@@ -34,6 +34,8 @@
                 <action android:name="com.example.passwordmanager.SOME_ACTION" />
             </intent-filter>
         </receiver>
+        <receiver android:name=".notifications.ToastReceiver" android:exported="false"/>
+        <receiver android:name=".notifications.DismissReceiver" android:exported="false"/>
     </application>
 
 </manifest>

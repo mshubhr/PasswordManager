@@ -1,20 +1,25 @@
 package com.example.passwordmanager.notifications
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import java.util.Calendar
+import androidx.work.*
+import java.util.concurrent.TimeUnit
+import java.util.*
 
-fun scheduleNotifications(context: Context) {
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val pendingIntent = PendingIntent.getBroadcast(context, 0, Intent(context, NotificationReceiver::class.java), PendingIntent.FLAG_UPDATE_CURRENT)
+fun scheduleNotifications(context: Context, time: Calendar) {
+    createNotification(context)
+    val currentTime = Calendar.getInstance()
+    val delay = time.timeInMillis - currentTime.timeInMillis
+    val initialDelay = if (delay > 0) delay else delay + 24 * 60 * 60 * 1000
 
-    val calender = Calendar.getInstance().apply {
-        timeInMillis = System.currentTimeMillis()
-        set(Calendar.HOUR_OF_DAY, 8)
-        set(Calendar.MINUTE, 0)
+    val notificationWork = OneTimeWorkRequestBuilder<NotificationWorker>()
+        .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+        .build()
+
+    WorkManager.getInstance(context).enqueue(notificationWork)
+}
+
+class NotificationWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+        return Result.success()
     }
-
-    alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, calender.timeInMillis, AlarmManager.INTERVAL_DAY, pendingIntent)
 }

@@ -2,21 +2,11 @@ package com.example.passwordmanager.ui
 
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,84 +26,83 @@ fun FingerPrintAuth(nav: NavHostController) {
     val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
 
     if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(0.7f)),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            TextComponent(text = "Biometric authentication not available or not set up", textColor = Color.White)
-        }
+        ShowUnavailableMessage()
         return
     }
 
     var message by remember { mutableStateOf("") }
     var id by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(key1 = true) {
-        biometricAuthenticator.promptBioMetricAuth(
-            title = "Login",
-            subTitle = "Use your fingerprint or face ID",
-            negativeButtonText = "Cancel",
-            onSuccess = {
-                message = "Success"
-                id = 1
-                nav.navigate(Screen.PasswordList.route)
-            },
-            onFailed = {
-                message = "Wrong Fingerprint or Face ID"
-                id = -1
-                android.util.Log.d("BiometricAuth", "Authentication failed.")
-            },
-            onError = { code, error ->
-                message = error
-                id = -1
-                android.util.Log.d("BiometricAuth", "Error code: $code, message: $error")
-            }
-        )
+    LaunchedEffect(Unit) {
+        authenticate(biometricAuthenticator, nav, { message = it }, { id = it })
     }
 
     if (id == -1) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(0.7f)),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Button(
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
-                onClick = {
-                    biometricAuthenticator.promptBioMetricAuth(
-                        title = "Login",
-                        subTitle = "Use your fingerprint or face ID",
-                        negativeButtonText = "Cancel",
-                        onSuccess = {
-                            message = "Success"
-                            id = 1
-                            nav.navigate(Screen.PasswordList.route)
-                        },
-                        onFailed = {
-                            message = "Wrong Fingerprint or Face ID"
-                            id = -1
-                            android.util.Log.d("BiometricAuth", "Authentication failed.")
-                        },
-                        onError = { code, error ->
-                            message = error
-                            id = -1
-                            android.util.Log.d("BiometricAuth", "Error code: $code, message: $error")
-                        }
-                    )
-                }) {
-                TextComponent(
-                    text = "Try Again",
-                    textColor = MaterialTheme.colorScheme.onBackground
-                )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-
-            TextComponent(text = "Current Status: $message", textColor = Color.White)
-        }
+        RetryAuthentication(biometricAuthenticator, nav, message, { message = it }, { id = it })
     }
+}
+
+@Composable
+fun ShowUnavailableMessage() {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(0.7f)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TextComponent(text = "Biometric authentication not available or not set up", textColor = Color.White)
+    }
+}
+
+@Composable
+fun RetryAuthentication(
+    biometricAuthenticator: BiometricAuthenticator,
+    nav: NavHostController,
+    message: String,
+    setMessage: (String) -> Unit,
+    setId: (Int) -> Unit
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(0.7f)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
+            onClick = { authenticate(biometricAuthenticator, nav, setMessage, setId) }
+        ) {
+            TextComponent(text = "Try Again", textColor = MaterialTheme.colorScheme.onBackground)
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        TextComponent(text = "Current Status: $message", textColor = Color.White)
+    }
+}
+
+fun authenticate(
+    biometricAuthenticator: BiometricAuthenticator,
+    nav: NavHostController,
+    setMessage: (String) -> Unit,
+    setId: (Int) -> Unit
+) {
+    biometricAuthenticator.promptBioMetricAuth(
+        title = "Login",
+        subTitle = "Use your fingerprint or face ID",
+        negativeButtonText = "Cancel",
+        onSuccess = {
+            setMessage("Success")
+            setId(1)
+            nav.navigate(Screen.PasswordList.route)
+        },
+        onFailed = {
+            setMessage("Wrong Fingerprint or Face ID")
+            setId(-1)
+        },
+        onError = { _, error ->
+            setMessage(error)
+            setId(-1)
+        }
+    )
 }

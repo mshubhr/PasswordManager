@@ -1,13 +1,12 @@
 package com.example.passwordmanager
 
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import androidx.activity.SystemBarStyle
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,16 +19,16 @@ import com.example.passwordmanager.navigation.PasswordManagerApp
 import com.example.passwordmanager.notifications.scheduleNotifications
 import com.example.passwordmanager.ui.theme.PasswordManagerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.*
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                scheduleNotifications(this)
-            } else {
-                // Permission is denied. message to the user or handle it
+                scheduleNotifications(this, getNotificationTime())
             }
         }
 
@@ -37,82 +36,44 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel(this)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    scheduleNotifications(this)
-                }
-                else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-            }
-        } else {
-            scheduleNotifications(this)
-        }
-
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            ),
-            navigationBarStyle = SystemBarStyle.light(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            ),
-        )
-        setContent {
-            PasswordManagerTheme {
-                PasswordManagerApp()
-            }
-        }
+        handlePermissions()
+        enableEdgeToEdge()
+        setContent { PasswordManagerTheme { PasswordManagerApp() } }
         checkBiometricSupport()
         showBiometricPrompt()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun handlePermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED -> { }
+                else -> requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     private fun checkBiometricSupport() {
         val biometricManager = BiometricManager.from(this)
         when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
-            BiometricManager.BIOMETRIC_SUCCESS -> {
-                // The app can authenticate using biometrics
-            }
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                // No biometric features available on this device
-            }
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
-                // Biometric features are currently unavailable
-            }
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                // The user hasn't associated any biometric credentials with their account
-            }
-
-            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> {
-                TODO()
-            }
-
-            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> {
-                TODO()
-            }
-
-            BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> {
-                TODO()
-            }
+            BiometricManager.BIOMETRIC_SUCCESS -> {}
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {}
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {}
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {}
+            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> TODO()
+            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> TODO()
+            BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> TODO()
         }
     }
 
     private fun showBiometricPrompt() {
         val executor = ContextCompat.getMainExecutor(this)
-        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {} )
-
+        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {})
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Biometric login for my app")
-            .setSubtitle("Log in using your biometric credential")
-            .setNegativeButtonText("Use account password")
+            .setTitle("Unlock Lock Box")
+            .setSubtitle("Unlock your screen with fingerprint")
+            .setNegativeButtonText("Cancel")
             .build()
-
         biometricPrompt.authenticate(promptInfo)
     }
 
@@ -124,9 +85,18 @@ class MainActivity : FragmentActivity() {
             val channel = NotificationChannel("password_manager_channel", name, importance).apply {
                 description = descriptionText
             }
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun getNotificationTime(): Calendar {
+        val sharedPreferences = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val hour = sharedPreferences.getInt("notification_hour", 9)
+        val minute = sharedPreferences.getInt("notification_minute", 0)
+        return Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
         }
     }
 }

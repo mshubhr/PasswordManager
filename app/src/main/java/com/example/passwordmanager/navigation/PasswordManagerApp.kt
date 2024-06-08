@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.passwordmanager.ui.FingerPrintAuth
 import com.example.passwordmanager.ui.PasswordListScreen
+import com.example.passwordmanager.ui.NotificationSettings
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -29,6 +30,12 @@ fun PasswordManagerApp() {
             exitTransition = { exitTransition() }
         ) {
             PasswordListScreen()
+        }
+        composable(Screen.NotificationSettings.route,
+            enterTransition = { enterTransition() },
+            exitTransition = { exitTransition() }
+        ) {
+            NotificationSettings()
         }
     }
 }

@@ -441,6 +441,7 @@ fun PasswordBottomSheet(
                 )
                 .fillMaxWidth()
                 .wrapContentHeight()
+                .align(Alignment.BottomCenter)
         ) {
             HorizontalDivider(
                 Modifier
@@ -527,16 +528,20 @@ fun PasswordBottomSheet(
                 }
             }
 
+            Spacer(modifier = Modifier.height(25.dp))
+
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(14.dp)
+                    .navigationBarsPadding()
             ) {
                 androidx.compose.material3.Button(
                     onClick = {
                         onDismiss()
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .padding(horizontal = 14.dp)
+                        .weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xff2c2c2c)
                     )
@@ -548,7 +553,6 @@ fun PasswordBottomSheet(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
                 androidx.compose.material3.Button(
                     onClick = {
                         onSave(
@@ -565,7 +569,9 @@ fun PasswordBottomSheet(
                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .padding(horizontal = 14.dp)
+                        .weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xff3F7DE3)
                     )
@@ -578,7 +584,6 @@ fun PasswordBottomSheet(
                     )
                 }
             }
-            Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.captionBar))
         }
     }
 }
