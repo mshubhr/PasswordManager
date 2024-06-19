@@ -10,7 +10,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import com.example.passwordmanager.notifications.scheduleNotifications
 import java.util.*
 
 @Composable
@@ -64,6 +63,5 @@ class SettingsViewModel : ViewModel() {
             putInt("notification_minute", time.get(Calendar.MINUTE))
             apply()
         }
-        scheduleNotifications(context, time)
     }
 }

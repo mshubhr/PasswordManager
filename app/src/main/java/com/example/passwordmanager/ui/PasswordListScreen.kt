@@ -83,7 +83,7 @@ fun PasswordListScreen(vm: PasswordViewModel = hiltViewModel()) {
     var openBottomSheet by rememberSaveable { mutableStateOf(false) }
     var openDetailsBottomSheet by rememberSaveable { mutableStateOf(false) }
     var selectedAuthData by rememberSaveable { mutableStateOf<Password?>(null) }
-    var isEditMode by rememberSaveable { mutableStateOf(false) } // New state for edit mode
+    var isEditMode by rememberSaveable { mutableStateOf(false) }
 
     val allData = vm.passwords.observeAsState(initial = emptyList())
 
@@ -116,7 +116,7 @@ fun PasswordListScreen(vm: PasswordViewModel = hiltViewModel()) {
             AnimatedVisibility(visible = allData.value.isEmpty(), modifier = Modifier.weight(1f)) {
                 Box(modifier = Modifier.weight(1f)) {
                     TextComponent(
-                        text = "Add your password by clicking + button",
+                        text = "Add your password by clicking +",
                         modifier = Modifier.align(Alignment.Center),
                         textSize = 22.sp
                     )
@@ -169,7 +169,6 @@ fun PasswordListScreen(vm: PasswordViewModel = hiltViewModel()) {
             enter = fadeIn() + slideInVertically { it },
             exit = fadeOut() + slideOutVertically { it },
         ) {
-            // Edit functionality added here
             PasswordBottomSheet(
                 isEditMode = isEditMode,
                 selectedAuthData = selectedAuthData,
@@ -413,7 +412,7 @@ fun PasswordBottomSheet(
                 createNotificationChannel(context)
                 notification(context)
             } else {
-                // Handle permission denied case
+                // Handle permission denied
             }
         }
     )
